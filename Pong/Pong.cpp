@@ -13,9 +13,9 @@ void InitWorldState(char worldState[20][20]);
 void Render(char worldState[20][20]);
 void DrawPlayer(Point position, char worldState[20][20]);
 
-const struct Point Player1Pos(0, 10);
-const struct Point Player2Pos(19, 10);
-const struct Point BallPos(10, 10);
+struct Point Player1Pos = Point(0, 10);
+struct Point Player2Pos = Point(19, 10);
+struct Point BallPos = Point(10, 10);
 
 #include <iostream>
 #include <chrono>
@@ -38,8 +38,8 @@ int main()
 {
 	// init 
 	auto renderBuffer = GetStdHandle(STD_OUTPUT_HANDLE);
-	COORD zeroCoord  = { 0, 0 };
-	//hidecursor();
+	COORD zeroCoord = { 0, 0 };
+	hidecursor();
 
 	char worldState[20][20];
 	InitWorldState(worldState);
@@ -53,41 +53,33 @@ int main()
 	auto deltaFixed = timePoint - timePoint;
 	while (true)
 	{
-		ReadConsoleInput(inputConsole, &inp, 1, &num_of_events);
-
-		switch (inp.EventType)
-		{
-		case KEY_EVENT:
-			switch (inp.Event.KeyEvent.wVirtualKeyCode)
-			{
-			case 0x57:
-				std::cout << "W\n";
-				break;
-
-			case 0x41:
-				std::cout << "A\n";
-				break;
-
-			case 0x53:
-				std::cout << "S\n";
-				break;
-
-			case 0x44:
-				std::cout << "D\n";
-				break;
-
-			}
-		}
-
-
-
 		auto frameStartTime = chrono::steady_clock::now();
 		deltaFrame = frameStartTime - timePoint;
 		deltaFixed += deltaFrame;
 		timePoint = frameStartTime;
+		ReadConsoleInput(inputConsole, &inp, 1, &num_of_events); // TODO: switch to non-blocking way of reading input
 
 		while (deltaFixed > fixedTimeStep)
 		{
+			switch (inp.EventType)
+			{
+			case KEY_EVENT:
+				switch (inp.Event.KeyEvent.wVirtualKeyCode)
+				{
+				case 0x57:
+					Player1Pos.y += 1;
+					Player1Pos.y %= 18;
+					break;
+
+				case 0x53:
+					Player1Pos.y -= 1;
+					if (Player1Pos.y < 1)
+						Player1Pos.y = 1;
+					break;
+				}
+			}
+
+
 			// fixed time step
 			deltaFixed -= fixedTimeStep;
 			DrawPlayer(Player1Pos, worldState);
@@ -95,8 +87,8 @@ int main()
 		}
 		// frame time step
 
-		/*SetConsoleCursorPosition(renderBuffer, zeroCoord);
-		Render(worldState);*/
+		SetConsoleCursorPosition(renderBuffer, zeroCoord);
+		Render(worldState);
 	}
 }
 
