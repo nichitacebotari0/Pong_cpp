@@ -13,6 +13,8 @@ void InitWorldState(char worldState[20][20]);
 void Render(char worldState[20][20]);
 void DrawPlayer(Point position, char worldState[20][20]);
 
+void MovePlayer(Point* player, bool up);
+
 struct Point Player1Pos = Point(0, 10);
 struct Point Player2Pos = Point(19, 10);
 struct Point BallPos = Point(10, 10);
@@ -57,49 +59,52 @@ int main()
 		deltaFrame = frameStartTime - timePoint;
 		deltaFixed += deltaFrame;
 		timePoint = frameStartTime;
-		ReadConsoleInput(inputConsole, &inp, 1, &num_of_events); // TODO: switch to non-blocking way of reading input
 
 		while (deltaFixed > fixedTimeStep)
 		{
-			switch (inp.EventType)
+			if (GetKeyState('W') & 0x8000)
 			{
-			case KEY_EVENT:
-				switch (inp.Event.KeyEvent.wVirtualKeyCode)
-				{
-				case 0x57:
-					Player1Pos.y += 1;
-					Player1Pos.y %= 18;
-					break;
-
-				case 0x53:
-					Player1Pos.y -= 1;
-					if (Player1Pos.y < 1)
-						Player1Pos.y = 1;
-					break;
-				}
+				MovePlayer(&Player1Pos, true);
 			}
-
+			if (GetKeyState('S') & 0x8000)
+			{
+				MovePlayer(&Player1Pos, false);
+			}
 
 			// fixed time step
 			deltaFixed -= fixedTimeStep;
 			DrawPlayer(Player1Pos, worldState);
 			DrawPlayer(Player2Pos, worldState);
 		}
-		// frame time step
 
+		// frame time step
 		SetConsoleCursorPosition(renderBuffer, zeroCoord);
 		Render(worldState);
 	}
 }
 
-/// <summary>
-/// Doesn't actually draw.
-/// </summary>
+void MovePlayer(Point* player, bool up)
+{
+	if (up)
+	{
+		player->y += 1;
+		if (player->y >= 18)
+			player->y = 18;
+	}
+	else { // down
+		player->y -= 1;
+		if (player->y <= 1)
+			player->y = 1;
+	}
+}
+
 void DrawPlayer(Point position, char worldState[20][20])
 {
+	worldState[position.y - 2][position.x] = ' '; // maybe look into another way to decide on z-index. probably not needed tho, just draw ball last
 	worldState[position.y - 1][position.x] = '|';
 	worldState[position.y][position.x] = '|';
 	worldState[position.y + 1][position.x] = '|';
+	worldState[position.y + 2][position.x] = ' ';
 }
 void Render(char worldState[20][20])
 {
@@ -112,6 +117,7 @@ void Render(char worldState[20][20])
 		cout << "\n";
 	}
 }
+
 void InitWorldState(char worldState[20][20])
 {
 	for (int i = 0; i < 20; i++)
