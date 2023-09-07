@@ -1,3 +1,11 @@
+
+#include <iostream>
+#include <chrono>
+#include <windows.h>
+
+using namespace std;
+using namespace std::chrono;
+
 struct Point {
 	Point(int xVal, int yVal)
 	{
@@ -15,15 +23,6 @@ void DrawPlayer(Point position, char worldState[20][20]);
 
 void MovePlayer(Point* player, bool up);
 
-struct Point Player1Pos = Point(0, 10);
-struct Point Player2Pos = Point(19, 10);
-struct Point BallPos = Point(10, 10);
-
-#include <iostream>
-#include <chrono>
-#include <windows.h>
-
-
 void hidecursor()
 {
 	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -33,8 +32,13 @@ void hidecursor()
 	SetConsoleCursorInfo(output, &info);
 }
 
-using namespace std;
-using namespace std::chrono;
+const nanoseconds PlayerMovementCooldown = duration_cast<nanoseconds>(milliseconds(100));
+struct Point Player1Pos = Point(0, 10);
+nanoseconds Player1MoveCd = duration_cast<nanoseconds>(milliseconds(0));
+struct Point Player2Pos = Point(19, 10);
+nanoseconds Player2MoveCd = duration_cast<nanoseconds>(milliseconds(0));
+
+struct Point BallPos = Point(10, 10);
 
 int main()
 {
@@ -62,30 +66,46 @@ int main()
 
 		while (deltaFixed > fixedTimeStep)
 		{
-			if (GetKeyState('W') & 0x8000)
+			// fixed time step
+
+			if (GetAsyncKeyState('W') & 0x8000 && Player1MoveCd <= Player1MoveCd.zero())
 			{
 				MovePlayer(&Player1Pos, true);
+				Player1MoveCd = PlayerMovementCooldown;
 			}
-			if (GetKeyState('S') & 0x8000)
+			if (GetAsyncKeyState('S') & 0x8000 && Player1MoveCd <= Player1MoveCd.zero())
 			{
 				MovePlayer(&Player1Pos, false);
+				Player1MoveCd = PlayerMovementCooldown;
 			}
 
-			// fixed time step
+			if (GetAsyncKeyState(VK_UP) & 0x8000 && Player2MoveCd <= Player2MoveCd.zero())
+			{
+				MovePlayer(&Player2Pos, true);
+				Player2MoveCd = PlayerMovementCooldown;
+			}
+			if (GetAsyncKeyState(VK_DOWN) & 0x8000 && Player2MoveCd <= Player2MoveCd.zero())
+			{
+				MovePlayer(&Player2Pos, false);
+				Player2MoveCd = PlayerMovementCooldown;
+			}
+
 			deltaFixed -= fixedTimeStep;
 			DrawPlayer(Player1Pos, worldState);
 			DrawPlayer(Player2Pos, worldState);
 		}
 
 		// frame time step
+		Player1MoveCd -= deltaFrame;
+		Player2MoveCd -= deltaFrame;
 		SetConsoleCursorPosition(renderBuffer, zeroCoord);
 		Render(worldState);
 	}
 }
 
-void MovePlayer(Point* player, bool up)
+void MovePlayer(Point* player, bool down)
 {
-	if (up)
+	if (!down)
 	{
 		player->y += 1;
 		if (player->y >= 18)
@@ -106,6 +126,7 @@ void DrawPlayer(Point position, char worldState[20][20])
 	worldState[position.y + 1][position.x] = '|';
 	worldState[position.y + 2][position.x] = ' ';
 }
+
 void Render(char worldState[20][20])
 {
 	for (int i = 0; i < 20; i++)
