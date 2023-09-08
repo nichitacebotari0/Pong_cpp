@@ -9,12 +9,12 @@ using namespace std::chrono;
 struct Point {
 	Point(int xVal, int yVal)
 	{
-		y = xVal;
-		x = yVal;
+		x = xVal;
+		y = yVal;
 	}
 
-	int y;
 	int x;
+	int y;
 };
 
 struct Vector2 {
@@ -46,7 +46,7 @@ nanoseconds Player2MoveCd = duration_cast<nanoseconds>(milliseconds(0));
 
 
 struct Point BallPos = Point(10, 10);
-struct Point BallVector = Point{ -1, 0 };
+struct Point BallVector = Point(-1, 0);
 const nanoseconds BallMovementCooldown = duration_cast<nanoseconds>(milliseconds(100));
 nanoseconds BallMoveCd = duration_cast<nanoseconds>(milliseconds(0));
 
@@ -74,10 +74,10 @@ int main()
 		deltaFixed += deltaFrame;
 		timePoint = frameStartTime;
 
+		worldState[BallPos.y][BallPos.x] = ' ';
 		while (deltaFixed > fixedTimeStep)
 		{
 			// fixed time step
-
 			if (GetAsyncKeyState('W') & 0x8000 && Player1MoveCd <= Player1MoveCd.zero())
 			{
 				MovePlayer(&Player1Pos, true);
@@ -99,65 +99,76 @@ int main()
 				MovePlayer(&Player2Pos, false);
 				Player2MoveCd = PlayerMovementCooldown;
 			}
-			DrawPlayer(Player1Pos, worldState);
-			DrawPlayer(Player2Pos, worldState);
 
-			worldState[BallPos.x][BallPos.y] = ' ';
 			if (BallMoveCd <= BallMoveCd.zero())
 			{
 				BallPos.y += BallVector.y;
 				BallPos.x += BallVector.x;
+				if (BallPos.x == 0)
+				{
+					bool ballHitPlayer1 = BallPos.y <= Player1Pos.y + 1 && BallPos.y >= Player1Pos.y - 1;
+					if (ballHitPlayer1)
+					{
+						BallVector.x = -BallVector.x;
+						BallVector.y = -BallVector.y;
+						BallPos.x += BallVector.x;
+						BallPos.y += BallVector.y;
+					}
+				}
 				BallMoveCd = BallMovementCooldown;
 			}
-			if (BallPos.y <= 0 || BallPos.x >= 19)
+
+			if (BallPos.x < 0 || BallPos.x > 19)
 			{
 				BallPos.y = 10;
 				BallPos.x = 10;
-				BallVector.y = -1;
-				BallVector.x = 0;
+				BallVector.x = -1;
+				BallVector.y = 0;
 			}
-			worldState[BallPos.x][BallPos.y] = '@';
-
 
 			deltaFixed -= fixedTimeStep;
 		}
+		DrawPlayer(Player1Pos, worldState);
+		DrawPlayer(Player2Pos, worldState);
+		worldState[BallPos.y][BallPos.x] = '@';
 
 		// frame time step
 		Player1MoveCd -= deltaFrame;
 		Player2MoveCd -= deltaFrame;
 		BallMoveCd -= deltaFrame;
 		SetConsoleCursorPosition(renderBuffer, zeroCoord);
+
 		Render(worldState);
 	}
 }
 
-void MovePlayer(Point* player, bool down)
+void MovePlayer(Point* player, bool up)
 {
-	if (!down)
+	if (up)
 	{
-		player->x += 1;
-		if (player->x >= 18)
-			player->x = 18;
+		player->y += 1;
+		if (player->y >= 18)
+			player->y = 18;
 	}
-	else { // down
-		player->x -= 1;
-		if (player->x <= 1)
-			player->x = 1;
+	else {
+		player->y -= 1;
+		if (player->y <= 1)
+			player->y = 1;
 	}
 }
 
 void DrawPlayer(Point position, char worldState[20][20])
 {
-	worldState[position.x - 2][position.y] = ' '; // maybe look into another way to decide on z-index. probably not needed tho, just draw ball last
-	worldState[position.x - 1][position.y] = '|';
-	worldState[position.x][position.y] = '|';
-	worldState[position.x + 1][position.y] = '|';
-	worldState[position.x + 2][position.y] = ' ';
+	worldState[position.y - 2][position.x] = ' '; // maybe look into another way to decide on z-index. probably not needed tho, just draw ball last
+	worldState[position.y - 1][position.x] = '|';
+	worldState[position.y][position.x] = '|';
+	worldState[position.y + 1][position.x] = '|';
+	worldState[position.y + 2][position.x] = ' ';
 }
 
 void Render(char worldState[20][20])
 {
-	for (int y = 0; y < 20; y++)
+	for (int y = 19; y >= 0; y--)
 	{
 		for (int x = 0; x < 20; x++)
 		{
@@ -169,13 +180,13 @@ void Render(char worldState[20][20])
 
 void InitWorldState(char worldState[20][20])
 {
-	for (int i = 0; i < 20; i++)
+	for (int y = 0; y < 20; y++)
 	{
-		for (int j = 0; j < 20; j++)
+		for (int x = 0; x < 20; x++)
 		{
-			worldState[i][j] = ' ';
-			if (i % 19 == 0)
-				worldState[i][j] = '-';
+			worldState[y][x] = ' ';
+			if (y % 19 == 0)
+				worldState[y][x] = '-';
 		}
 	}
 }
