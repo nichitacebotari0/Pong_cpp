@@ -22,10 +22,12 @@ struct Vector2 {
 	float y;
 };
 
+const USHORT xLen = 60;
+const USHORT yLen = 20;
 
-void InitWorldState(char worldState[20][20]);
-void Render(char worldState[20][20]);
-void DrawPlayer(Point position, char worldState[20][20]);
+void InitWorldState(char worldState[yLen][xLen]);
+void Render(char worldState[yLen][xLen]);
+void DrawPlayer(Point position, char worldState[yLen][xLen]);
 
 void MovePlayer(Point* player, bool up);
 
@@ -39,13 +41,12 @@ void hidecursor()
 }
 
 const nanoseconds PlayerMovementCooldown = duration_cast<nanoseconds>(milliseconds(100));
-struct Point Player1Pos = Point(0, 10);
+struct Point Player1Pos = Point(0, yLen / 2);
 nanoseconds Player1MoveCd = duration_cast<nanoseconds>(milliseconds(0));
-struct Point Player2Pos = Point(19, 10);
+struct Point Player2Pos = Point(xLen - 1, yLen / 2);
 nanoseconds Player2MoveCd = duration_cast<nanoseconds>(milliseconds(0));
 
-
-struct Point BallPos = Point(10, 10);
+struct Point BallPos = Point(xLen / 2, yLen / 2);
 struct Point BallVector = Point(-1, 0);
 const nanoseconds BallMovementCooldown = duration_cast<nanoseconds>(milliseconds(100));
 nanoseconds BallMoveCd = duration_cast<nanoseconds>(milliseconds(0));
@@ -57,12 +58,11 @@ int main()
 	COORD zeroCoord = { 0, 0 };
 	hidecursor();
 
-	char worldState[20][20];
+	char worldState[yLen][xLen];
 	InitWorldState(worldState);
 	HANDLE inputConsole = GetStdHandle(STD_INPUT_HANDLE);
-	INPUT_RECORD inp;
-	DWORD num_of_events;
 
+	// loop
 	auto fixedTimeStep = microseconds(4ms);
 	auto timePoint = steady_clock::now();
 	auto deltaFrame = timePoint - timePoint;
@@ -115,7 +115,7 @@ int main()
 						BallPos.y += BallVector.y;
 					}
 				}
-				if (BallPos.x == 19)
+				if (BallPos.x == xLen - 1)
 				{
 					bool ballHitPlayer2 = BallPos.y <= Player2Pos.y + 1 && BallPos.y >= Player2Pos.y - 1;
 					if (ballHitPlayer2)
@@ -130,10 +130,10 @@ int main()
 				BallMoveCd = BallMovementCooldown;
 			}
 
-			if (BallPos.x < 0 || BallPos.x > 19)
+			if (BallPos.x < 0 || BallPos.x > xLen - 1)
 			{
-				BallPos.y = 10;
-				BallPos.x = 10;
+				BallPos.y = yLen/2;
+				BallPos.x = xLen / 2;
 				BallVector.x = -1;
 				BallVector.y = 0;
 			}
@@ -159,17 +159,17 @@ void MovePlayer(Point* player, bool up)
 	if (up)
 	{
 		player->y += 1;
-		if (player->y >= 18)
-			player->y = 18;
+		if (player->y >= yLen - 2) // account for player width of 1
+			player->y = yLen - 2;
 	}
 	else {
 		player->y -= 1;
-		if (player->y <= 1)
+		if (player->y <= 1) // account for player width of 1
 			player->y = 1;
 	}
 }
 
-void DrawPlayer(Point position, char worldState[20][20])
+void DrawPlayer(Point position, char worldState[yLen][xLen])
 {
 	worldState[position.y - 2][position.x] = ' '; // maybe look into another way to decide on z-index. probably not needed tho, just draw ball last
 	worldState[position.y - 1][position.x] = '|';
@@ -178,11 +178,11 @@ void DrawPlayer(Point position, char worldState[20][20])
 	worldState[position.y + 2][position.x] = ' ';
 }
 
-void Render(char worldState[20][20])
+void Render(char worldState[yLen][xLen])
 {
-	for (int y = 19; y >= 0; y--)
+	for (int y = yLen - 1; y >= 0; y--)
 	{
-		for (int x = 0; x < 20; x++)
+		for (int x = 0; x < xLen; x++)
 		{
 			cout << worldState[y][x];
 		}
@@ -190,14 +190,14 @@ void Render(char worldState[20][20])
 	}
 }
 
-void InitWorldState(char worldState[20][20])
+void InitWorldState(char worldState[yLen][xLen])
 {
-	for (int y = 0; y < 20; y++)
+	for (int y = 0; y < yLen; y++)
 	{
-		for (int x = 0; x < 20; x++)
+		for (int x = 0; x < xLen; x++)
 		{
 			worldState[y][x] = ' ';
-			if (y % 19 == 0)
+			if (y % (yLen - 1) == 0)
 				worldState[y][x] = '-';
 		}
 	}
