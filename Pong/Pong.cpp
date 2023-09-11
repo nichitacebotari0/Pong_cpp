@@ -110,11 +110,23 @@ int main()
 					if (ballHitPlayer1)
 					{
 						BallVector.x = -BallVector.x;
-						BallVector.y = -BallVector.y;
+
 						BallPos.x += BallVector.x;
 						BallPos.y += BallVector.y;
 					}
 				}
+				if (BallPos.x == 19)
+				{
+					bool ballHitPlayer2 = BallPos.y <= Player2Pos.y + 1 && BallPos.y >= Player2Pos.y - 1;
+					if (ballHitPlayer2)
+					{
+						BallVector.x = -BallVector.x;
+
+						BallPos.x += BallVector.x;
+						BallPos.y += BallVector.y;
+					}
+				}
+
 				BallMoveCd = BallMovementCooldown;
 			}
 
